@@ -1,6 +1,10 @@
 # Math AI Teacher
 
+<<<<<<< HEAD
 Web app for students and teachers: enter a math problem (numbers or natural language), optionally a topic, and get **answer**, **difficulty**, **relevance to topic**, and **explanation** from an AI teacher chatbox.
+=======
+Small API + web app for scoring K–12 math content: **difficulty**, **quality**, and **answer**.
+>>>>>>> c9b4b1560cafb600fd126ca09e2e71f4520f1cad
 
 ## Run
 
