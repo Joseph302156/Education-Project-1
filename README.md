@@ -1,6 +1,6 @@
 # Math Content Scoring API
 
-Small API + web app for scoring K–12 math content: **difficulty**, **quality**, and **answer**. Built to demonstrate API-first design with auth and a minimal DB—suitable for demos (e.g. YC startups like Darcel building AI chatbots for education in developing countries).
+Small API + web app for scoring K–12 math content: **difficulty**, **quality**, and **answer**.
 
 ## Run in 2 minutes
 
