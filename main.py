@@ -10,6 +10,7 @@ from auth import verify_api_key
 from database import init_db, store_content_and_scores
 from scoring import estimate_difficulty, ScoreResult
 from answer_engine import get_answer
+from ai_teacher import get_ai_teacher_response
 from pydantic import BaseModel, Field
 
 
@@ -98,3 +99,23 @@ async def score(
 @app.get("/health")
 async def health():
     return {"status": "ok"}
+
+
+# ---- Student/teacher chat: no auth; single response with answer, difficulty, relevance, explanation ----
+
+class ChatRequest(BaseModel):
+    problem_text: str = Field(..., min_length=1)
+    topic: str | None = None
+
+
+class ChatResponse(BaseModel):
+    answer: str
+    difficulty: str
+    relevance_to_topic: str
+    explanation: str
+
+
+@app.post("/v1/chat", response_model=ChatResponse)
+async def chat(body: ChatRequest):
+    """AI teacher: one reply with answer, difficulty, relevance to topic, explanation. No auth for students/teachers."""
+    return ChatResponse(**get_ai_teacher_response(body.problem_text, body.topic))
