@@ -1,21 +1,20 @@
-# Math Content Scoring API
+# Math AI Teacher
 
-Small API + web app for scoring K–12 math content: **difficulty**, **quality**, and **answer**. Built to demonstrate API-first design with auth and a minimal DB—suitable for demos (e.g. YC startups like Darcel building AI chatbots for education in developing countries).
+Web app for students and teachers: enter a math problem (numbers or natural language), optionally a topic, and get **answer**, **difficulty**, **relevance to topic**, and **explanation** from an AI teacher chatbox.
 
-## Run in 2 minutes
+## Run
 
 ```bash
 python -m venv .venv
 source .venv/bin/activate   # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
-cp .env.example .env        # optional: set API_KEY
+cp .env.example .env        # optional: add OPENAI_API_KEY for real AI responses
 uvicorn main:app --reload
 ```
 
-Open **http://127.0.0.1:8000** for the web UI.  
-Open **http://127.0.0.1:8000/docs** for OpenAPI (Swagger).
+Open **http://127.0.0.1:8000** — that’s the main site (chatbox). No login or API key needed for students/teachers.
 
-Default API key for local dev: `dev-key-change-in-production` (set in `.env` as `API_KEY`).
+**AI responses:** Set `OPENAI_API_KEY` in `.env` to use OpenAI for answer, difficulty, relevance, and explanation. Without it, the app still works using built-in scoring and SymPy for equations, with a short message suggesting you add the key.
 
 ---
 

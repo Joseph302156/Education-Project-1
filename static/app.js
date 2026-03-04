@@ -1,74 +1,83 @@
 const form = document.getElementById("form");
-const resultEl = document.getElementById("result");
+const messagesEl = document.getElementById("messages");
 const errorEl = document.getElementById("error");
+const problemEl = document.getElementById("problem");
+const topicEl = document.getElementById("topic");
 const btn = document.getElementById("btn");
-
-form.addEventListener("submit", async (e) => {
-  e.preventDefault();
-  errorEl.style.display = "none";
-  resultEl.style.display = "none";
-  const problem = document.getElementById("problem").value.trim();
-  const topic = document.getElementById("topic").value.trim() || null;
-  const grade = document.getElementById("grade").value;
-  const apiKey = document.getElementById("apikey").value || "dev-key-change-in-production";
-
-  btn.disabled = true;
-  try {
-    const res = await fetch("/v1/score", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-API-Key": apiKey,
-      },
-      body: JSON.stringify({
-        problem_text: problem,
-        topic: topic || null,
-        grade_level: grade ? parseInt(grade, 10) : null,
-      }),
-    });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) {
-      errorEl.textContent = data.detail || res.statusText || "Request failed";
-      errorEl.style.display = "block";
-      return;
-    }
-    renderResult(data);
-    resultEl.style.display = "block";
-  } catch (err) {
-    errorEl.textContent = err.message || "Network error";
-    errorEl.style.display = "block";
-  } finally {
-    btn.disabled = false;
-  }
-});
-
-function renderResult(r) {
-  const diffClass = r.difficulty === "easy" ? "easy" : r.difficulty === "hard" ? "hard" : "medium";
-  const qualityPct = Math.round((r.quality_score || 0) * 100);
-  const diffPct = Math.round((r.difficulty_score || 0) * 100);
-  const answer = r.answer || {};
-  const steps = (answer.steps || []).length ? `<ul>${answer.steps.map(s => `<li>${escapeHtml(s)}</li>`).join("")}</ul>` : "";
-
-  resultEl.innerHTML = `
-    <h3>Difficulty</h3>
-    <span class="badge ${diffClass}">${r.difficulty}</span>
-    <div class="score-bar"><span style="width:${diffPct}%"></span></div>
-    <small>${r.readability_notes || ""}</small>
-
-    <h3 style="margin-top:1rem">Quality</h3>
-    <div class="score-bar"><span style="width:${qualityPct}%"></span></div>
-    <small>${r.quality_factors?.length_ok ? "✓ Length OK" : ""} ${r.quality_factors?.has_question_mark ? "✓ Clear question" : ""}</small>
-
-    ${r.topic_match ? `<h3 style="margin-top:1rem">Topic</h3><p>${escapeHtml(r.topic_match)}</p>` : ""}
-
-    <h3 style="margin-top:1rem">Answer</h3>
-    <div class="answer-box">${escapeHtml(answer.answer_text || "—")}</div>
-    ${steps}
-  `;
-}
 
 function escapeHtml(s) {
   const div = document.createElement("div");
   div.textContent = s;
   return div.innerHTML;
 }
+
+function appendMessage(role, content) {
+  const wrap = document.createElement("div");
+  wrap.className = `msg ${role}`;
+  const bubble = document.createElement("div");
+  bubble.className = "bubble";
+  bubble.innerHTML = escapeHtml(content);
+  wrap.appendChild(bubble);
+  messagesEl.appendChild(wrap);
+  messagesEl.scrollTop = messagesEl.scrollHeight;
+}
+
+function appendTeacherMessage(data) {
+  const wrap = document.createElement("div");
+  wrap.className = "msg teacher";
+  const bubble = document.createElement("div");
+  bubble.className = "bubble";
+  bubble.innerHTML = `
+    <div class="block"><span class="label">Answer</span><div>${escapeHtml(data.answer || "—")}</div></div>
+    <div class="block"><span class="label">Difficulty</span><div>${escapeHtml(data.difficulty || "—")}</div></div>
+    <div class="block"><span class="label">Relevance to topic</span><div>${escapeHtml(data.relevance_to_topic || "—")}</div></div>
+    <div class="block"><span class="label">Explanation</span><div>${escapeHtml(data.explanation || "—")}</div></div>
+  `;
+  wrap.appendChild(bubble);
+  messagesEl.appendChild(wrap);
+  messagesEl.scrollTop = messagesEl.scrollHeight;
+}
+
+form.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  errorEl.style.display = "none";
+  const problem = problemEl.value.trim();
+  const topic = topicEl.value.trim() || null;
+
+  appendMessage("user", problem + (topic ? `\nTopic: ${topic}` : ""));
+
+  problemEl.value = "";
+  btn.disabled = true;
+
+  try {
+    const res = await fetch("/v1/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ problem_text: problem, topic }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      errorEl.textContent = data.detail || res.statusText || "Request failed";
+      errorEl.style.display = "block";
+      appendTeacherMessage({
+        answer: "—",
+        difficulty: "—",
+        relevance_to_topic: "—",
+        explanation: "Sorry, something went wrong. Try again.",
+      });
+      return;
+    }
+    appendTeacherMessage(data);
+  } catch (err) {
+    errorEl.textContent = err.message || "Network error";
+    errorEl.style.display = "block";
+    appendTeacherMessage({
+      answer: "—",
+      difficulty: "—",
+      relevance_to_topic: "—",
+      explanation: "Could not reach the server. Check your connection.",
+    });
+  } finally {
+    btn.disabled = false;
+  }
+});
